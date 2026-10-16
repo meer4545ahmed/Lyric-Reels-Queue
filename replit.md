@@ -1,6 +1,6 @@
-# [Project name]
+# Reelkeeper
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Reelkeeper is a private, single-creator library and reminder queue for lyric videos.
 
 ## Run & Operate
 
@@ -22,23 +22,35 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/lyric-reels` — creator dashboard, sign-in, library, and schedule screens
+- `artifacts/api-server/src/routes/videos.ts` — video library and rotation API
+- `artifacts/api-server/src/routes/settings.ts` — recurring reminder settings
+- `artifacts/api-server/src/routes/storage.ts` — private direct-to-object-storage uploads
+- `lib/db/src/schema/lyric-reels.ts` — video metadata, schedule, and single-owner record
+- `lib/api-spec/openapi.yaml` — API contract source of truth
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Clerk handles account sign-in; the first authenticated account claims the single-owner space, and later accounts are denied.
+- Videos are uploaded directly to private object storage; PostgreSQL stores metadata and the owner-only queue pointer.
+- Facebook publishing is not connected. The queue supports manual-post tracking and browser reminders only; never collect Facebook passwords or imply automated posting.
+- Browser reminders require the app to be open; no background push service is configured.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Upload and organize personal lyric videos with per-video Reel titles and descriptions.
+- Rotate videos in FIFO order, repeat indefinitely, and track manually marked posts.
+- Set a recurring reminder interval and timezone; download a private video and copy its caption before posting manually.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- This site is for one creator's personal use. Typical videos are about four minutes and 600 MB.
+- Keep the experience simple and require sign-in; do not reuse a shared password for site access.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Development and production have separate Clerk user stores and databases. The creator must claim the owner account on the environment they use.
+- After publishing, the first account to sign in claims production ownership. The creator should create that account before sharing the published URL.
 
 ## Pointers
 

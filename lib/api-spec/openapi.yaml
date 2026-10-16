@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: videos
+    description: Manage the private video library and posting rotation
+  - name: settings
+    description: Posting schedule settings
+  - name: storage
+    description: Direct uploads to private object storage
 paths:
   /healthz:
     get:
@@ -24,6 +30,183 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /videos:
+    get:
+      operationId: listVideos
+      tags: [videos]
+      summary: List videos in rotation order
+      responses:
+        "200":
+          description: Videos and current rotation pointer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoList"
+    post:
+      operationId: createVideo
+      tags: [videos]
+      summary: Add an uploaded video to the rotation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoInput"
+      responses:
+        "201":
+          description: Video added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+  /videos/{id}:
+    patch:
+      operationId: updateVideo
+      tags: [videos]
+      summary: Edit a video's title or description
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoUpdate"
+      responses:
+        "200":
+          description: Updated video
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+        "404":
+          description: Video not found
+    delete:
+      operationId: deleteVideo
+      tags: [videos]
+      summary: Remove a video from the library and rotation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Video removed
+        "404":
+          description: Video not found
+  /videos/{id}/posted:
+    post:
+      operationId: markVideoPosted
+      tags: [videos]
+      summary: Mark the current video as posted and advance the rotation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Video marked posted and queue advanced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoList"
+        "404":
+          description: Video not found
+  /videos/{id}/skip:
+    post:
+      operationId: skipVideo
+      tags: [videos]
+      summary: Skip the current video for this rotation pass
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rotation advanced without marking a post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoList"
+        "404":
+          description: Video not found
+  /videos/{id}/file:
+    get:
+      operationId: getVideoFileUrl
+      tags: [videos]
+      summary: Get a short-lived download URL for a video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Short-lived file URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoFileUrl"
+        "404":
+          description: Video not found
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get schedule configuration
+      responses:
+        "200":
+          description: Schedule settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleSettings"
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update the recurring reminder schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleSettingsInput"
+      responses:
+        "200":
+          description: Updated schedule settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleSettings"
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request a presigned URL for a private video upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlInput"
+      responses:
+        "200":
+          description: Direct upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +216,75 @@ components:
           type: string
       required:
         - status
+    Video:
+      type: object
+      required: [id, title, description, originalFilename, objectPath, mimeType, sizeBytes, uploadedAt, postedCount, isNext]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        originalFilename: { type: string }
+        objectPath: { type: string }
+        mimeType: { type: string }
+        sizeBytes: { type: integer }
+        uploadedAt: { type: string, format: date-time }
+        lastPostedAt: { type: ["string", "null"], format: date-time }
+        postedCount: { type: integer }
+        isNext: { type: boolean }
+    VideoList:
+      type: object
+      required: [videos]
+      properties:
+        videos:
+          type: array
+          items: { $ref: "#/components/schemas/Video" }
+    VideoInput:
+      type: object
+      required: [title, description, originalFilename, objectPath, mimeType, sizeBytes]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, maxLength: 5000 }
+        originalFilename: { type: string, minLength: 1, maxLength: 255 }
+        objectPath: { type: string, minLength: 1 }
+        mimeType: { type: string, minLength: 1, maxLength: 100 }
+        sizeBytes: { type: integer, minimum: 1, maximum: 2147483647 }
+    VideoUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, maxLength: 5000 }
+    ScheduleSettings:
+      type: object
+      required: [enabled, intervalHours, timezone, nextPostAt, lastPostedAt]
+      properties:
+        enabled: { type: boolean }
+        intervalHours: { type: integer, minimum: 1, maximum: 24 }
+        timezone: { type: string }
+        nextPostAt: { type: ["string", "null"], format: date-time }
+        lastPostedAt: { type: ["string", "null"], format: date-time }
+    ScheduleSettingsInput:
+      type: object
+      required: [enabled, intervalHours, timezone]
+      properties:
+        enabled: { type: boolean }
+        intervalHours: { type: integer, minimum: 1, maximum: 24 }
+        timezone: { type: string, minLength: 1, maxLength: 80 }
+    UploadUrlInput:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+        size: { type: integer, minimum: 1, maximum: 2147483647 }
+        contentType: { type: string, minLength: 1, maxLength: 100 }
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL: { type: string, format: uri }
+        objectPath: { type: string }
+    VideoFileUrl:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
 

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Lyric Reels Queue"
+description = "A private creator dashboard for storing lyric videos, managing Reel titles and descriptions, and tracking a recurring three-hour posting queue with manual Facebook posting reminders until official Meta publishing is configured."
+version = "1.0.0"
+id = "artifacts/lyric-reels"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23200
+
+[services.development]
+run = "pnpm --filter @workspace/lyric-reels run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/lyric-reels", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/lyric-reels/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23200"
+BASE_PATH = "/"
