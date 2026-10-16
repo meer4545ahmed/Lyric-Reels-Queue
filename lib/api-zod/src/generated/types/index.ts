@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './facebookConnectResponse';
+export * from './facebookPageSummary';
+export * from './facebookSelectPageInput';
+export * from './facebookStatus';
 export * from './healthStatus';
 export * from './scheduleSettings';
 export * from './scheduleSettingsInput';

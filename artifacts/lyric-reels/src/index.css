@@ -901,6 +901,87 @@
 .browser-reminders small { grid-column: 1 / -1; color: #879088; font-size: 10px; }
 .preview-download { margin: 12px 0 0; text-decoration: none; }
 .owner-claim-note { max-width: 420px; margin: 14px auto 0; color: #77837b; font-size: 11px; line-height: 1.55; text-align: center; }
+
+/* A simple publishing rhythm and its Page connection */
+.schedule-main-column { display: grid; gap: 16px; min-width: 0; }
+.fixed-interval { display: flex; align-items: center; gap: 13px; padding: 15px 0; border-bottom: 1px solid #e5dfd3; }
+.fixed-interval-number { display: grid; place-items: center; width: 42px; height: 42px; color: #315d53; background: #e8e9dc; font: 23px var(--serif); }
+.fixed-interval > span:nth-child(2) { display: grid; gap: 4px; flex: 1; }
+.fixed-interval strong { font-size: 11px; }
+.fixed-interval small { color: #828c83; font-size: 9px; }
+.fixed-interval-lock { color: #9b8e78; font: 8px var(--mono); letter-spacing: .1em; }
+.facebook-card { padding: 23px 24px 18px; border: 1px solid #e1dbcf; background: #fbf8f0; }
+.facebook-card-head { display: flex; align-items: center; gap: 12px; padding-bottom: 17px; border-bottom: 1px solid #e5dfd3; }
+.facebook-mark { display: grid; place-items: center; width: 39px; height: 39px; flex: none; color: #345d51; background: #e8e9dc; border-radius: 50%; }
+.facebook-card-head > div { min-width: 0; flex: 1; }
+.facebook-card-head h2 { margin: 5px 0 0; font: 23px/1.1 var(--serif); color: var(--ink); }
+.connection-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px; color: #807761; background: #eee8d9; font: 8px var(--mono); letter-spacing: .06em; white-space: nowrap; }
+.connection-pill i, .insights-indicator { width: 7px; height: 7px; border-radius: 50%; background: #b49a68; }
+.connection-pill.connected { color: #426e56; background: #e3ecdf; }
+.connection-pill.connected i, .insights-available .insights-indicator { background: #6e9a72; }
+.facebook-connect-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 19px 0 17px; }
+.facebook-connect-row > div { min-width: 0; }
+.facebook-connect-row strong, .fb-connected-copy strong { display: block; color: #30473f; font-size: 12px; }
+.facebook-connect-row p { margin: 5px 0 0; color: #78847b; font-size: 10px; line-height: 1.55; }
+.facebook-connect-row .button { flex: none; min-height: 37px; font-size: 10px; }
+.setup-notice { display: flex; gap: 10px; margin: 16px 0 2px; padding: 12px; border: 1px solid #e4d4b3; color: #756345; background: #f8f0df; }
+.setup-notice > svg { flex: none; margin-top: 1px; }
+.setup-notice p { margin: 0; font-size: 9px; line-height: 1.6; }
+.setup-notice strong { color: #5e5038; }
+.setup-notice code { display: block; margin-top: 5px; overflow-wrap: anywhere; color: #53665b; font: 9px var(--mono); }
+.connected-content { padding-top: 17px; }
+.fb-connected-copy { display: flex; align-items: center; gap: 10px; color: #548263; }
+.fb-connected-copy > span { display: grid; gap: 4px; }
+.fb-connected-copy small { color: #7c887f; font-size: 9px; }
+.page-choice-list { display: grid; gap: 7px; margin-top: 14px; }
+.page-choice { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 10px 12px; border: 1px solid #e4ded1; cursor: pointer; transition: border-color .16s, background .16s; }
+.page-choice:hover, .page-choice-selected { border-color: #9eb29b; background: #f2f3e9; }
+.page-radio { position: relative; display: grid; place-items: center; width: 16px; height: 16px; flex: none; }
+.page-radio input { position: absolute; inset: -4px; width: 24px; height: 24px; margin: 0; opacity: 0; cursor: pointer; }
+.page-radio i { width: 15px; height: 15px; border: 1px solid #a9b2a2; border-radius: 50%; }
+.page-radio input:checked + i { border: 4px solid #4d7764; }
+.page-radio input:focus-visible + i { outline: 3px solid #d49757; outline-offset: 3px; }
+.page-choice-copy { min-width: 0; flex: 1; display: grid; gap: 4px; }
+.page-choice-copy strong { overflow: hidden; color: #354a40; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.page-choice-copy small { color: #879087; font: 8px var(--mono); }
+.selected-label { display: flex; align-items: center; gap: 4px; color: #4f785c; font: 8px var(--mono); letter-spacing: .04em; }
+.no-pages { margin: 13px 0 0; padding: 12px; color: #7d786a; background: #f3eee2; font-size: 10px; line-height: 1.5; }
+.facebook-actions { display: flex; justify-content: flex-end; margin-top: 9px; }
+.facebook-actions .button { min-height: 34px; font-size: 9px; }
+.insights-status { display: flex; align-items: start; gap: 9px; padding: 12px 0 0; border-top: 1px solid #e5dfd3; }
+.insights-indicator { flex: none; margin-top: 4px; }
+.insights-status strong { color: #6e705f; font-size: 9px; }
+.insights-status p { margin: 4px 0 0; color: #858d83; font-size: 9px; line-height: 1.5; }
+.facebook-last-error { display: flex; align-items: flex-start; gap: 7px; margin: 12px 0 0; padding: 9px 10px; color: #924b42; background: #f5e7df; font-size: 9px; line-height: 1.45; }
+.facebook-last-error svg { flex: none; }
+.fb-error { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; padding: 15px 0; color: #916049; font-size: 10px; }
+.fb-error span { flex: 1; }
+.fb-error .button { min-height: 32px; font-size: 9px; }
+.fb-skeleton { display: grid; gap: 9px; padding: 18px 0; }
+.fb-skeleton i { display: block; height: 11px; width: 83%; background: linear-gradient(90deg,#e8e3d7,#f1ede3,#e8e3d7); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+.fb-skeleton i:nth-child(2) { width: 62%; }.fb-skeleton i:nth-child(3) { width: 72%; }
+.last-activity small { color: #879087; font-size: 9px; }
+.schedule-honesty > span { display: grid; place-items: center; flex: none; }
+.schedule-honesty p { font-size: 10px; }
+@media (max-width: 900px) {
+  .schedule-layout { grid-template-columns: minmax(0, 1fr) minmax(220px, .72fr); }
+}
+@media (max-width: 760px) {
+  .schedule-layout { grid-template-columns: 1fr; }
+  .schedule-main-column { order: 1; }
+  .schedule-aside { order: 2; grid-template-columns: 1fr 1fr; align-items: start; }
+  .schedule-preview { grid-row: span 2; }
+}
+@media (max-width: 520px) {
+  .facebook-card { padding: 18px 15px 15px; }
+  .facebook-card-head { flex-wrap: wrap; }
+  .connection-pill { margin-left: 51px; }
+  .facebook-connect-row { align-items: stretch; flex-direction: column; gap: 12px; }
+  .facebook-connect-row .button { align-self: flex-start; }
+  .schedule-aside { grid-template-columns: 1fr; }
+  .schedule-preview { grid-row: auto; }
+  .selected-label { font-size: 7px; }
+}
 @media (max-width: 640px) {
   .due-banner { align-items: flex-start; flex-wrap: wrap; font-size: 11px; }
   .due-banner > .text-link { margin-left: 29px; }

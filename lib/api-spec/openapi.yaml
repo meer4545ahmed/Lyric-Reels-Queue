@@ -14,6 +14,8 @@ tags:
     description: Manage the private video library and posting rotation
   - name: settings
     description: Posting schedule settings
+  - name: facebook
+    description: Facebook Page connection and automated publishing
   - name: storage
     description: Direct uploads to private object storage
 paths:
@@ -172,6 +174,64 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ScheduleSettings"
+  /facebook/status:
+    get:
+      operationId: getFacebookStatus
+      tags: [facebook]
+      summary: Get Facebook Page connection and publishing status
+      responses:
+        "200":
+          description: Facebook connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacebookStatus"
+  /facebook/connect:
+    post:
+      operationId: startFacebookConnect
+      tags: [facebook]
+      summary: Start secure Facebook OAuth connection
+      responses:
+        "200":
+          description: Facebook authorization URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacebookConnectResponse"
+        "503":
+          description: Facebook app credentials are not configured
+  /facebook/page:
+    put:
+      operationId: selectFacebookPage
+      tags: [facebook]
+      summary: Choose the Facebook Page used for publishing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacebookSelectPageInput"
+      responses:
+        "200":
+          description: Selected Page and current connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacebookStatus"
+        "404":
+          description: Page is not connected
+  /facebook/connection:
+    delete:
+      operationId: disconnectFacebook
+      tags: [facebook]
+      summary: Disconnect Facebook and pause automatic publishing
+      responses:
+        "200":
+          description: Facebook connection removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacebookStatus"
     put:
       operationId: updateSettings
       tags: [settings]
@@ -218,7 +278,7 @@ components:
         - status
     Video:
       type: object
-      required: [id, title, description, originalFilename, objectPath, mimeType, sizeBytes, uploadedAt, postedCount, isNext]
+      required: [id, title, description, originalFilename, objectPath, mimeType, sizeBytes, uploadedAt, postedCount, isNext, viewCount]
       properties:
         id: { type: integer }
         title: { type: string }
@@ -230,6 +290,7 @@ components:
         uploadedAt: { type: string, format: date-time }
         lastPostedAt: { type: ["string", "null"], format: date-time }
         postedCount: { type: integer }
+        viewCount: { type: integer }
         isNext: { type: boolean }
     VideoList:
       type: object
@@ -255,13 +316,16 @@ components:
         description: { type: string, maxLength: 5000 }
     ScheduleSettings:
       type: object
-      required: [enabled, intervalHours, timezone, nextPostAt, lastPostedAt]
+      required: [enabled, intervalHours, timezone, nextPostAt, lastPostedAt, currentCycle, lastError, lastPostVideoTitle]
       properties:
         enabled: { type: boolean }
         intervalHours: { type: integer, minimum: 1, maximum: 24 }
         timezone: { type: string }
         nextPostAt: { type: ["string", "null"], format: date-time }
         lastPostedAt: { type: ["string", "null"], format: date-time }
+        currentCycle: { type: integer }
+        lastError: { type: ["string", "null"] }
+        lastPostVideoTitle: { type: ["string", "null"] }
     ScheduleSettingsInput:
       type: object
       required: [enabled, intervalHours, timezone]
@@ -287,4 +351,38 @@ components:
       required: [url]
       properties:
         url: { type: string }
+    FacebookPageSummary:
+      type: object
+      required: [pageId, pageName, selected]
+      properties:
+        pageId: { type: string }
+        pageName: { type: string }
+        selected: { type: boolean }
+    FacebookStatus:
+      type: object
+      required: [appConfigured, connected, callbackUrl, pages, selectedPageId, selectedPageName, viewInsightsAvailable, viewInsightsMessage, autoPostingEnabled, nextPostAt, lastError]
+      properties:
+        appConfigured: { type: boolean }
+        connected: { type: boolean }
+        callbackUrl: { type: string }
+        pages:
+          type: array
+          items: { $ref: "#/components/schemas/FacebookPageSummary" }
+        selectedPageId: { type: ["string", "null"] }
+        selectedPageName: { type: ["string", "null"] }
+        viewInsightsAvailable: { type: boolean }
+        viewInsightsMessage: { type: ["string", "null"] }
+        autoPostingEnabled: { type: boolean }
+        nextPostAt: { type: ["string", "null"], format: date-time }
+        lastError: { type: ["string", "null"] }
+    FacebookConnectResponse:
+      type: object
+      required: [authorizationUrl]
+      properties:
+        authorizationUrl: { type: string, format: uri }
+    FacebookSelectPageInput:
+      type: object
+      required: [pageId]
+      properties:
+        pageId: { type: string, minLength: 1, maxLength: 100 }
 

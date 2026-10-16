@@ -18,5 +18,6 @@ export interface Video {
   /** @nullable */
   lastPostedAt?: Date | null;
   postedCount: number;
+  viewCount: number;
   isNext: boolean;
 }

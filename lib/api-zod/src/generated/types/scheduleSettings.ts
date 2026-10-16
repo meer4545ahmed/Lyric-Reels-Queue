@@ -18,4 +18,9 @@ export interface ScheduleSettings {
   nextPostAt: Date | null;
   /** @nullable */
   lastPostedAt: Date | null;
+  currentCycle: number;
+  /** @nullable */
+  lastError: string | null;
+  /** @nullable */
+  lastPostVideoTitle: string | null;
 }

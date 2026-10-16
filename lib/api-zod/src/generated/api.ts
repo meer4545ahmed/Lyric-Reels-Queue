@@ -32,6 +32,7 @@ export const ListVideosResponse = zod.object({
   "uploadedAt": zod.coerce.date(),
   "lastPostedAt": zod.coerce.date().nullish(),
   "postedCount": zod.number().int(),
+  "viewCount": zod.number().int(),
   "isNext": zod.boolean()
 }))
 })
@@ -73,6 +74,7 @@ export const CreateVideoResponse = zod.object({
   "uploadedAt": zod.coerce.date(),
   "lastPostedAt": zod.coerce.date().nullish(),
   "postedCount": zod.number().int(),
+  "viewCount": zod.number().int(),
   "isNext": zod.boolean()
 })
 
@@ -106,6 +108,7 @@ export const UpdateVideoResponse = zod.object({
   "uploadedAt": zod.coerce.date(),
   "lastPostedAt": zod.coerce.date().nullish(),
   "postedCount": zod.number().int(),
+  "viewCount": zod.number().int(),
   "isNext": zod.boolean()
 })
 
@@ -139,6 +142,7 @@ export const MarkVideoPostedResponse = zod.object({
   "uploadedAt": zod.coerce.date(),
   "lastPostedAt": zod.coerce.date().nullish(),
   "postedCount": zod.number().int(),
+  "viewCount": zod.number().int(),
   "isNext": zod.boolean()
 }))
 })
@@ -163,6 +167,7 @@ export const SkipVideoResponse = zod.object({
   "uploadedAt": zod.coerce.date(),
   "lastPostedAt": zod.coerce.date().nullish(),
   "postedCount": zod.number().int(),
+  "viewCount": zod.number().int(),
   "isNext": zod.boolean()
 }))
 })
@@ -192,7 +197,92 @@ export const GetSettingsResponse = zod.object({
   "intervalHours": zod.number().int().min(1).max(getSettingsResponseIntervalHoursMax),
   "timezone": zod.string(),
   "nextPostAt": zod.coerce.date().nullable(),
-  "lastPostedAt": zod.coerce.date().nullable()
+  "lastPostedAt": zod.coerce.date().nullable(),
+  "currentCycle": zod.number().int(),
+  "lastError": zod.string().nullable(),
+  "lastPostVideoTitle": zod.string().nullable()
+})
+
+
+/**
+ * @summary Get Facebook Page connection and publishing status
+ */
+export const GetFacebookStatusResponse = zod.object({
+  "appConfigured": zod.boolean(),
+  "connected": zod.boolean(),
+  "callbackUrl": zod.string(),
+  "pages": zod.array(zod.object({
+  "pageId": zod.string(),
+  "pageName": zod.string(),
+  "selected": zod.boolean()
+})),
+  "selectedPageId": zod.string().nullable(),
+  "selectedPageName": zod.string().nullable(),
+  "viewInsightsAvailable": zod.boolean(),
+  "viewInsightsMessage": zod.string().nullable(),
+  "autoPostingEnabled": zod.boolean(),
+  "nextPostAt": zod.coerce.date().nullable(),
+  "lastError": zod.string().nullable()
+})
+
+
+/**
+ * @summary Start secure Facebook OAuth connection
+ */
+export const StartFacebookConnectResponse = zod.object({
+  "authorizationUrl": zod.string().url()
+})
+
+
+/**
+ * @summary Choose the Facebook Page used for publishing
+ */
+export const selectFacebookPageBodyPageIdMax = 100;
+
+
+
+export const SelectFacebookPageBody = zod.object({
+  "pageId": zod.string().min(1).max(selectFacebookPageBodyPageIdMax)
+})
+
+export const SelectFacebookPageResponse = zod.object({
+  "appConfigured": zod.boolean(),
+  "connected": zod.boolean(),
+  "callbackUrl": zod.string(),
+  "pages": zod.array(zod.object({
+  "pageId": zod.string(),
+  "pageName": zod.string(),
+  "selected": zod.boolean()
+})),
+  "selectedPageId": zod.string().nullable(),
+  "selectedPageName": zod.string().nullable(),
+  "viewInsightsAvailable": zod.boolean(),
+  "viewInsightsMessage": zod.string().nullable(),
+  "autoPostingEnabled": zod.boolean(),
+  "nextPostAt": zod.coerce.date().nullable(),
+  "lastError": zod.string().nullable()
+})
+
+
+/**
+ * @summary Disconnect Facebook and pause automatic publishing
+ */
+export const DisconnectFacebookResponse = zod.object({
+  "appConfigured": zod.boolean(),
+  "connected": zod.boolean(),
+  "callbackUrl": zod.string(),
+  "pages": zod.array(zod.object({
+  "pageId": zod.string(),
+  "pageName": zod.string(),
+  "selected": zod.boolean()
+})),
+  "selectedPageId": zod.string().nullable(),
+  "selectedPageName": zod.string().nullable(),
+  "viewInsightsAvailable": zod.boolean(),
+  "viewInsightsMessage": zod.string().nullable(),
+  "autoPostingEnabled": zod.boolean(),
+  "nextPostAt": zod.coerce.date().nullable(),
+  "lastError": zod.string().nullable()
 })
 
 
@@ -220,7 +310,10 @@ export const UpdateSettingsResponse = zod.object({
   "intervalHours": zod.number().int().min(1).max(updateSettingsResponseIntervalHoursMax),
   "timezone": zod.string(),
   "nextPostAt": zod.coerce.date().nullable(),
-  "lastPostedAt": zod.coerce.date().nullable()
+  "lastPostedAt": zod.coerce.date().nullable(),
+  "currentCycle": zod.number().int(),
+  "lastError": zod.string().nullable(),
+  "lastPostVideoTitle": zod.string().nullable()
 })
 
 

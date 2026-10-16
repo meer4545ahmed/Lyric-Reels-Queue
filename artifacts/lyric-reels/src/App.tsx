@@ -8,14 +8,15 @@ import {
   ArrowRight, Bell, Check, CheckCircle2, ChevronDown, Clock3,
   CloudUpload, Copy, Download, Film, FolderOpen, Headphones, LoaderCircle, LogOut,
   Menu, MoreHorizontal, Pencil, Play, Plus, RotateCw, SkipForward, Sparkles,
-  Trash2, Upload, X,
+  Trash2, Upload, X, Facebook, ShieldCheck, CircleAlert,
 } from 'lucide-react';
 import {
-  getGetSettingsQueryKey, getGetVideoFileUrlQueryKey, getListVideosQueryKey, useCreateVideo, useDeleteVideo,
+  getGetFacebookStatusQueryKey, getGetSettingsQueryKey, getGetVideoFileUrlQueryKey, getListVideosQueryKey, useCreateVideo, useDeleteVideo,
+  useDisconnectFacebook, useGetFacebookStatus, useSelectFacebookPage, useStartFacebookConnect,
   useGetSettings, useGetVideoFileUrl, useListVideos, useMarkVideoPosted,
   useRequestUploadUrl, useSkipVideo, useUpdateSettings, useUpdateVideo,
 } from '@workspace/api-client-react';
-import type { ScheduleSettingsInput, Video, VideoInput } from '@workspace/api-client-react';
+import type { FacebookStatus, ScheduleSettingsInput, Video, VideoInput } from '@workspace/api-client-react';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -117,14 +118,14 @@ function Landing() {
   return <div className="landing grain">
     <header className="landing-nav"><Logo /><Link href="/sign-in" className="landing-signin">Sign in <ArrowRight size={15} /></Link></header>
     <section className="hero-section">
-      <div className="hero-copy animate-rise"><div className="eyebrow"><span className="eyebrow-dot" /> A QUIETER WAY TO KEEP THE CYCLE MOVING</div><h1>Your words.<br /><em>In rotation.</em></h1><p className="hero-lede">A private little home for your lyric videos — with a gentle nudge when it’s time to share the next one.</p><div className="hero-actions"><Link href="/sign-up" className="button button-primary">Make your space <ArrowRight size={16} /></Link><span className="private-note"><span className="tiny-lock">✳</span> Just for you. Always.</span></div></div>
+      <div className="hero-copy animate-rise"><div className="eyebrow"><span className="eyebrow-dot" /> A QUIETER WAY TO KEEP THE CYCLE MOVING</div><h1>Your words.<br /><em>In rotation.</em></h1><p className="hero-lede">A private little home for your lyric videos — with a dependable posting rhythm when you want one.</p><div className="hero-actions"><Link href="/sign-up" className="button button-primary">Make your space <ArrowRight size={16} /></Link><span className="private-note"><span className="tiny-lock">PRIVATE</span> Just for you. Always.</span></div></div>
       <div className="hero-art animate-rise delay-1" aria-label="Abstract artwork of a film frame and sunlit lyric lines"><div className="art-orbit orbit-one" /><div className="art-orbit orbit-two" /><div className="art-sun" /><div className="art-frame"><div className="frame-perf perf-top" /><div className="frame-center"><span className="frame-label">SIDE A — TRACK 04</span><div className="lyric-lines"><span>the light keeps</span><em>finding its way</em><span>back to me</span></div><div className="sound-wave"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div><span className="frame-time">00:18 <b>/</b> 00:42</span></div><div className="frame-perf perf-bottom" /></div><div className="floating-note">a loop worth keeping <span>↗</span></div><div className="art-index">01 / YOUR NEXT CHAPTER</div></div>
       <div className="hero-footnote"><span>01</span><span>BUILT FOR ONE CREATOR, ONE GOOD LOOP AT A TIME</span><span>SCROLL TO SEE THE RHYTHM ↓</span></div>
     </section>
     <section className="manifesto-section"><div className="section-index">THE IDEA / 01</div><div className="manifesto-copy"><p className="manifesto-kicker">Less juggling. More making.</p><h2>Keep the videos close.<br /><em>Keep the ritual simple.</em></h2><p className="manifesto-desc">Reelkeeper remembers what’s in the mix, what’s next, and when you meant to come back. The posting stays yours — always a human, always your call.</p></div><div className="manifesto-stamp"><span>YOUR<br />OWN<br /><em>PACE</em></span><div className="stamp-ring">PRIVATE • PERSONAL • YOURS •</div></div></section>
-    <section className="flow-section"><div className="flow-heading"><div className="section-index">A SMALL, LOVELY LOOP / 02</div><h2>From finished file<br />to <em>ready when you are.</em></h2></div><div className="flow-rail"><div className="flow-step"><span className="flow-number">01</span><div className="flow-icon"><CloudUpload size={20} /></div><h3>Drop it in</h3><p>Keep your big, beautiful video files in one private library. Add the title and caption while the moment is fresh.</p><span className="flow-caption">MULTIPLE FILES, UP TO 2 GB EACH</span></div><div className="flow-connector"><span>→</span></div><div className="flow-step"><span className="flow-number">02</span><div className="flow-icon"><RotateCw size={20} /></div><h3>Let the queue breathe</h3><p>Your videos move through a simple first-in, first-out rotation. The next one is never a guessing game.</p><span className="flow-caption">A QUEUE THAT REMEMBERS</span></div><div className="flow-connector"><span>→</span></div><div className="flow-step"><span className="flow-number">03</span><div className="flow-icon"><Headphones size={20} /></div><h3>Get a gentle nudge</h3><p>Choose your own reminder rhythm and timezone. When it’s time, you decide what to do next.</p><span className="flow-caption">REMINDERS ONLY. NEVER AUTO-POSTS.</span></div></div></section>
-    <section className="honesty-section"><div className="honesty-asterisk">✳</div><div><span className="section-index">A NOTE ON HOW THIS WORKS</span><h2>Your queue is ready.<br /><em>Publishing stays in your hands.</em></h2><p>Reelkeeper doesn’t connect to Meta or publish anything for you. It keeps your video, caption, and next-up order close by — then reminds you. You post manually when you’re ready.</p></div><div className="manual-card"><span className="manual-check"><Check size={18} /></span><strong>Your work. Your timing.</strong><small>No account connection. No hidden automation.</small><div className="manual-status"><span /> MANUAL POSTING MODE</div></div></section>
-    <section className="closing-section"><div className="closing-decoration">R<br />K</div><span className="section-index">MAKE THE NEXT ONE COUNT / 03</span><h2>Make a little<br /><em>room for your songs.</em></h2><Link href="/sign-up" className="button button-primary">Start your private queue <ArrowRight size={16} /></Link><p>One creator. One private space. No posting robots.</p></section>
+     <section className="flow-section"><div className="flow-heading"><div className="section-index">A SMALL, LOVELY LOOP / 02</div><h2>From finished file<br />to <em>ready when you are.</em></h2></div><div className="flow-rail"><div className="flow-step"><span className="flow-number">01</span><div className="flow-icon"><CloudUpload size={20} /></div><h3>Drop it in</h3><p>Keep your big, beautiful video files in one private library. Add the title and caption while the moment is fresh.</p><span className="flow-caption">MULTIPLE FILES, UP TO 2 GB EACH</span></div><div className="flow-connector"><span>→</span></div><div className="flow-step"><span className="flow-number">02</span><div className="flow-icon"><RotateCw size={20} /></div><h3>Let the queue breathe</h3><p>Your videos move through a simple first-in, first-out rotation. The next one is never a guessing game.</p><span className="flow-caption">A QUEUE THAT REMEMBERS</span></div><div className="flow-connector"><span>→</span></div><div className="flow-step"><span className="flow-number">03</span><div className="flow-icon"><Headphones size={20} /></div><h3>Set the rhythm</h3><p>Connect a Facebook Page to schedule the next video every three hours. Pause it whenever you need room.</p><span className="flow-caption">A SIMPLE, OPTIONAL SCHEDULE</span></div></div></section>
+     <section className="honesty-section"><div className="honesty-asterisk"><ShieldCheck size={28} /></div><div><span className="section-index">A NOTE ON HOW THIS WORKS</span><h2>A steady cycle.<br /><em>Clear, optional access.</em></h2><p>Connect a Facebook Page to use the scheduled three-hour rhythm. You can pause it whenever you like. View insights are optional and won’t block publishing.</p></div><div className="manual-card"><span className="manual-check"><Check size={18} /></span><strong>Your Page, your choice.</strong><small>Choose a connected Page or disconnect it at any time.</small><div className="manual-status"><span /> ONE CREATOR · ONE QUEUE</div></div></section>
+     <section className="closing-section"><div className="closing-decoration">R<br />K</div><span className="section-index">MAKE THE NEXT ONE COUNT / 03</span><h2>Make a little<br /><em>room for your songs.</em></h2><Link href="/sign-up" className="button button-primary">Start your private queue <ArrowRight size={16} /></Link><p>One creator. One private space. A rhythm you can pause.</p></section>
     <footer className="landing-footer"><Logo /><span>A private queue for the things you make.</span><span>© REELKEEPER — MADE FOR THE MOMENT BEFORE SHARE</span></footer>
   </div>;
 }
@@ -191,7 +192,7 @@ function Dashboard() {
   const nextAt = settings.data?.nextPostAt;
   const hoursLeft = nextAt ? Math.max(0, Math.ceil((new Date(nextAt).getTime() - Date.now()) / 3_600_000)) : null;
   return <AppFrame><div className="home-topline"><span>YOUR PRIVATE CREATOR SPACE</span><span className="date-mark">{new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date())}</span></div>
-    <div className="welcome-block animate-rise"><div><p className="welcome-label">A good day to make something</p><h1>Hello, {first}<span className="accent-dot">.</span></h1><p className="welcome-subtitle">Your videos are here. The next step is yours.</p></div><div className="welcome-scribble" aria-hidden="true">✳</div></div>
+    <div className="welcome-block animate-rise"><div><p className="welcome-label">A good day to make something</p><h1>Hello, {first}<span className="accent-dot">.</span></h1><p className="welcome-subtitle">Your videos are here. The next step is yours.</p></div><div className="welcome-scribble" aria-hidden="true">RK</div></div>
     {notice && <Notice message={notice} tone={notice.includes('didn’t') ? 'error' : 'success'} onDismiss={() => setNotice('')} />}
     <section className="next-section animate-rise delay-1"><div className="section-topline"><div><span className="section-index">01 / UP NEXT</span><h2>Ready when you are</h2></div><Link href="/library" className="text-link">See the whole library <ArrowRight size={15} /></Link></div>
       {list.isLoading ? <div className="next-skeleton"><span className="next-skeleton-image" /><span className="skeleton-lines"><i /><i /></span></div> : list.isError ? <QueryError retry={() => list.refetch()} /> : nextVideo ? <div className="feature-card"><div className="feature-art"><div className="film-rail" /><div className="feature-art-content"><span className="feature-tag"><span /> NEXT IN ROTATION</span><span className="feature-no">{String(nextVideo.postedCount + 1).padStart(2, '0')}</span><div className="feature-wave">{Array.from({ length: 39 }, (_, i) => <i key={i} style={{ height: `${12 + ((i * 31 + 17) % 57)}%` }} />)}</div><span className="feature-reel">A REELKEEPER SELECTION</span></div></div>
@@ -294,42 +295,81 @@ function Modal({ title, subtitle, children, onClose, wide = false }: { title: st
 function SchedulePage() {
   const settings = useGetSettings();
   const update = useUpdateSettings();
+  const facebook = useGetFacebookStatus();
+  const startConnect = useStartFacebookConnect();
+  const selectPage = useSelectFacebookPage();
+  const disconnect = useDisconnectFacebook();
   const client = useQueryClient();
   const [enabled, setEnabled] = useState(true);
-  const [intervalHours, setIntervalHours] = useState(3);
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
   const [changed, setChanged] = useState(false);
   const [notice, setNotice] = useState('');
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => typeof Notification === 'undefined' ? 'unsupported' : Notification.permission);
   const initialized = useRef(false);
-  useEffect(() => { if (settings.data && !initialized.current) { initialized.current = true; setEnabled(settings.data.enabled); setIntervalHours(settings.data.intervalHours); setTimezone(settings.data.timezone); } }, [settings.data]);
+  useEffect(() => { if (settings.data && !initialized.current) { initialized.current = true; setEnabled(settings.data.enabled); setTimezone(settings.data.timezone); } }, [settings.data]);
   const schedulePreview = useMemo(() => {
-    if (!enabled) return 'Reminders are paused. Turn them back on whenever you’re ready.';
-    const next = settings.data?.nextPostAt ? new Date(settings.data.nextPostAt) : new Date(Date.now() + intervalHours * 3_600_000);
-    return `Your next gentle nudge is ${new Intl.DateTimeFormat(undefined, { weekday: 'long', hour: 'numeric', minute: '2-digit', timeZone: timezone, timeZoneName: 'short' }).format(next)}.`;
-  }, [enabled, intervalHours, settings.data?.nextPostAt, timezone]);
+    if (!enabled) return 'Your schedule is paused. Turn it back on whenever you’re ready.';
+    const next = settings.data?.nextPostAt ? new Date(settings.data.nextPostAt) : new Date(Date.now() + 3 * 3_600_000);
+    return `Next scheduled post: ${new Intl.DateTimeFormat(undefined, { weekday: 'long', hour: 'numeric', minute: '2-digit', timeZone: timezone, timeZoneName: 'short' }).format(next)}.`;
+  }, [enabled, settings.data?.nextPostAt, timezone]);
   const save = () => {
-    const input: ScheduleSettingsInput = { enabled, intervalHours, timezone };
-    update.mutate({ data: input }, { onSuccess: data => { client.setQueryData(getGetSettingsQueryKey(), data); setChanged(false); setNotice('Your reminder rhythm is saved.'); }, onError: () => setNotice('We couldn’t save your reminder settings. Try again.') });
+    const input: ScheduleSettingsInput = { enabled, intervalHours: 3, timezone };
+    update.mutate({ data: input }, { onSuccess: data => { client.setQueryData(getGetSettingsQueryKey(), data); void client.invalidateQueries({ queryKey: getGetSettingsQueryKey() }); setChanged(false); setNotice(enabled ? 'Your 3-hour schedule is on.' : 'Your schedule is paused.'); }, onError: () => setNotice('We couldn’t save your schedule. Try again.') });
   };
   const toggle = (event: ChangeEvent<HTMLInputElement>) => { setEnabled(event.target.checked); setChanged(true); };
-  const allowNotifications = async () => {
-    if (typeof Notification === 'undefined') {
-      setNotificationPermission('unsupported');
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    setNotificationPermission(permission);
-    if (permission === 'granted') setNotice('Browser reminders are enabled for this device.');
+  const syncFacebook = (data: FacebookStatus, message: string) => {
+    client.setQueryData(getGetFacebookStatusQueryKey(), data);
+    void client.invalidateQueries({ queryKey: getGetFacebookStatusQueryKey() });
+    setNotice(message);
   };
-  return <AppFrame><PageHeading eyebrow="A RHYTHM THAT'S YOURS" title="Reminder rhythm" detail="Set a gentle nudge for the moment you want to come back." />
-    {notice && <Notice message={notice} tone={notice.includes('couldn’t') ? 'error' : 'success'} onDismiss={() => setNotice('')} />}
-    {settings.isLoading ? <div className="schedule-loading"><div /><div /><div /></div> : settings.isError ? <QueryError retry={() => settings.refetch()} /> : <div className="schedule-layout animate-rise delay-1"><section className="schedule-form-card"><div className="schedule-form-heading"><span className="section-index">01 / THE NUDGE</span><span className="schedule-icon"><Clock3 size={19} /></span><h2>Give your queue a little rhythm.</h2><p>We’ll remind you to check in. Sharing is always your call.</p></div>
-      <label className="toggle-row" htmlFor="schedule-enabled"><span><strong>Gentle reminders</strong><small>Keep a steady pace without the pressure.</small></span><span className="switch-wrap"><input id="schedule-enabled" data-testid="input-schedule-enabled" type="checkbox" checked={enabled} onChange={toggle} /><span className="switch-track" /></span></label>
-      <div className={`setting-control ${!enabled ? 'setting-disabled' : ''}`}><label htmlFor="interval-hours">REMIND ME EVERY</label><div className="hours-control"><select id="interval-hours" data-testid="select-interval-hours" value={intervalHours} disabled={!enabled} onChange={e => { setIntervalHours(Number(e.target.value)); setChanged(true); }}>{[1, 2, 3, 4, 6, 8, 12, 24].map(hour => <option key={hour} value={hour}>{hour} {hour === 1 ? 'hour' : 'hours'}</option>)}</select><ChevronDown size={16} /></div><p>A gentle reminder every {intervalHours} {intervalHours === 1 ? 'hour' : 'hours'}.</p></div>
-      <div className={`setting-control timezone-control ${!enabled ? 'setting-disabled' : ''}`}><label htmlFor="timezone">YOUR TIMEZONE</label><div className="hours-control"><select id="timezone" data-testid="select-timezone" disabled={!enabled} value={timezone} onChange={e => { setTimezone(e.target.value); setChanged(true); }}>{timezoneChoices.map(zone => <option key={zone} value={zone}>{zone.replaceAll('_', ' ')}</option>)}</select><ChevronDown size={16} /></div><p>Reminders will follow this local clock.</p></div>
-      <div className="schedule-form-footer"><span>{changed ? 'Unsaved changes' : 'Your settings are up to date'}</span><Button onClick={save} disabled={!changed || update.isPending}>{update.isPending ? <><LoaderCircle size={15} className="spin" /> Saving</> : <><Check size={15} /> Save rhythm</>}</Button></div>
-    </section><aside className="schedule-aside"><div className="schedule-preview"><span className="section-index">02 / NEXT UP</span><div className="preview-clock"><span className="clock-hand hand-hour" /><span className="clock-hand hand-minute" /><span className="clock-center" /><span className="clock-tick tick-12" /><span className="clock-tick tick-3" /><span className="clock-tick tick-6" /><span className="clock-tick tick-9" /></div><h3>{enabled ? `${intervalHours} hours` : 'Whenever you’re ready'}</h3><p>{schedulePreview}</p><div className={`schedule-status ${enabled ? 'status-on' : 'status-off'}`}><span />{enabled ? 'REMINDERS ON' : 'REMINDERS PAUSED'}</div></div><div className="schedule-honesty"><span>✳</span><div><strong>A nudge, never an autopilot.</strong><p>Reelkeeper doesn’t connect to Meta or publish videos. We’ll bring your queue to mind; you decide when to post.</p></div></div><div className="browser-reminders"><div><strong>Browser notifications</strong><p>{notificationPermission === 'granted' ? 'Notifications are allowed on this device.' : notificationPermission === 'unsupported' ? 'This browser does not support notifications.' : notificationPermission === 'denied' ? 'Notifications are blocked in browser settings.' : 'Allow a browser alert when a reminder is due.'}</p></div><Button variant="outline" onClick={allowNotifications} disabled={notificationPermission !== 'default'}><Bell size={15} />{notificationPermission === 'granted' ? 'Enabled' : 'Enable'}</Button><small>For alerts, keep Reelkeeper open in a browser tab.</small></div><div className="last-activity"><span className="section-index">LAST MARKED AS POSTED</span><strong>{readableDate(settings.data?.lastPostedAt)}</strong></div></aside></div>}
+  const connect = () => startConnect.mutate(undefined, {
+    onSuccess: result => {
+      if (result.authorizationUrl) window.location.assign(result.authorizationUrl);
+      else setNotice('Facebook did not return an authorization link. Try again.');
+    },
+    onError: () => setNotice('Facebook connection could not start. Check the app setup and try again.'),
+  });
+  const choosePage = (pageId: string) => selectPage.mutate({ data: { pageId } }, {
+    onSuccess: data => syncFacebook(data, 'Your Facebook Page selection is saved.'),
+    onError: () => setNotice('That Page could not be selected. Try again.'),
+  });
+  const disconnectPage = () => {
+    if (!window.confirm('Disconnect the Facebook Page from Reelkeeper?')) return;
+    disconnect.mutate(undefined, {
+      onSuccess: data => syncFacebook(data, 'Facebook is disconnected.'),
+      onError: () => setNotice('Facebook could not be disconnected. Try again.'),
+    });
+  };
+  const facebookBusy = startConnect.isPending || selectPage.isPending || disconnect.isPending;
+  const fbStatus = facebook.data;
+  return <AppFrame><PageHeading eyebrow="A RHYTHM THAT'S YOURS" title="Schedule" detail="A steady 3-hour rhythm, with your Page connection in one place." />
+    {notice && <Notice message={notice} tone={notice.includes('couldn’t') || notice.includes('could not') || notice.includes('did not') ? 'error' : 'success'} onDismiss={() => setNotice('')} />}
+    {settings.isLoading ? <div className="schedule-loading"><div /><div /><div /></div> : settings.isError ? <QueryError retry={() => settings.refetch()} /> : <div className="schedule-layout animate-rise delay-1">
+      <div className="schedule-main-column">
+        <section className="schedule-form-card"><div className="schedule-form-heading"><span className="section-index">01 / POSTING RHYTHM</span><span className="schedule-icon"><Clock3 size={19} /></span><h2>Keep the cycle moving.</h2><p>Reelkeeper can post the next video to your selected Page every three hours. You can pause any time.</p></div>
+          <label className="toggle-row" htmlFor="schedule-enabled"><span><strong>3-hour schedule</strong><small>{enabled ? 'Posting is scheduled while a Page is connected.' : 'Paused until you turn it back on.'}</small></span><span className="switch-wrap"><input id="schedule-enabled" data-testid="input-schedule-enabled" type="checkbox" checked={enabled} onChange={toggle} /><span className="switch-track" /></span></label>
+          <div className={`fixed-interval ${!enabled ? 'setting-disabled' : ''}`}><span className="fixed-interval-number">03</span><span><strong>Hours between posts</strong><small>The interval stays simple and consistent.</small></span><span className="fixed-interval-lock">FIXED</span></div>
+          <div className={`setting-control timezone-control ${!enabled ? 'setting-disabled' : ''}`}><label htmlFor="timezone">YOUR TIMEZONE</label><div className="hours-control"><select id="timezone" data-testid="select-timezone" disabled={!enabled} value={timezone} onChange={e => { setTimezone(e.target.value); setChanged(true); }}>{timezoneChoices.map(zone => <option key={zone} value={zone}>{zone.replaceAll('_', ' ')}</option>)}</select><ChevronDown size={16} /></div><p>Post times follow this local clock.</p></div>
+          <div className="schedule-form-footer"><span>{changed ? 'Unsaved changes' : 'Your settings are up to date'}</span><Button onClick={save} disabled={!changed || update.isPending}>{update.isPending ? <><LoaderCircle size={15} className="spin" /> Saving</> : <><Check size={15} /> Save schedule</>}</Button></div>
+        </section>
+        <section className="facebook-card" aria-labelledby="facebook-heading">
+          <div className="facebook-card-head"><span className="facebook-mark"><Facebook size={18} /></span><div><span className="section-index">02 / FACEBOOK PAGE</span><h2 id="facebook-heading">Your publishing connection</h2></div><span className={`connection-pill ${fbStatus?.connected ? 'connected' : ''}`}><i />{facebook.isLoading ? 'CHECKING' : facebook.isError ? 'STATUS UNKNOWN' : fbStatus?.connected ? 'CONNECTED' : 'NOT CONNECTED'}</span></div>
+          {facebook.isLoading ? <div className="fb-skeleton"><i /><i /><i /></div> : facebook.isError ? <div className="fb-error"><CircleAlert size={17} /><span>We couldn’t check your Facebook connection.</span><Button variant="outline" onClick={() => facebook.refetch()}>Try again</Button></div> : <>
+            {!fbStatus?.appConfigured && <div className="setup-notice"><CircleAlert size={17} /><p><strong>Facebook connection setup is not complete.</strong> The app needs its Facebook OAuth credentials and a matching callback URL before you can connect. Current callback URL: <code>{fbStatus?.callbackUrl || 'Not provided'}</code></p></div>}
+            {fbStatus?.connected ? <div className="connected-content">
+              <div className="fb-connected-copy"><ShieldCheck size={18} /><span><strong>Facebook is connected.</strong><small>Choose which Page Reelkeeper should publish to.</small></span></div>
+              {fbStatus.pages.length ? <div className="page-choice-list" role="radiogroup" aria-label="Choose a Facebook Page">{fbStatus.pages.map(page => <label key={page.pageId} className={`page-choice ${page.selected ? 'page-choice-selected' : ''}`}><span className="page-radio"><input type="radio" name="facebook-page" value={page.pageId} checked={page.selected} disabled={facebookBusy} onChange={() => choosePage(page.pageId)} /><i /></span><span className="page-choice-copy"><strong>{page.pageName}</strong><small>Page · {page.pageId}</small></span>{page.selected && <span className="selected-label"><Check size={13} /> SELECTED</span>}</label>)}</div> : <p className="no-pages">No Pages were returned for this connection. Check the Facebook account’s Page access and reconnect if needed.</p>}
+              <div className="facebook-actions"><Button variant="quiet" onClick={disconnectPage} disabled={facebookBusy}>{disconnect.isPending ? <LoaderCircle size={15} className="spin" /> : <X size={15} />} Disconnect Page</Button></div>
+            </div> : <div className="facebook-connect-row"><div><strong>Connect the Page you manage</strong><p>Reelkeeper will use the authorization provided by Facebook. You can disconnect at any time.</p></div><Button onClick={connect} disabled={!fbStatus?.appConfigured || facebookBusy}>{startConnect.isPending ? <><LoaderCircle size={15} className="spin" /> Connecting</> : <><Facebook size={15} /> Connect Facebook</>}</Button></div>}
+            <div className={`insights-status ${fbStatus?.viewInsightsAvailable ? 'insights-available' : ''}`}><span className="insights-indicator" /><div><strong>{fbStatus?.viewInsightsAvailable ? 'View insights available' : 'View insights not available'}</strong><p>{fbStatus?.viewInsightsAvailable ? (fbStatus.viewInsightsMessage || 'Page view counts can be used when available.') : (fbStatus?.viewInsightsMessage || 'Optional access. Posting can continue without view insights.')}</p></div></div>
+            {fbStatus?.lastError && <p className="facebook-last-error" role="status"><CircleAlert size={15} />{fbStatus.lastError}</p>}
+          </>}
+        </section>
+      </div>
+      <aside className="schedule-aside"><div className="schedule-preview"><span className="section-index">03 / NEXT POST</span><div className="preview-clock"><span className="clock-hand hand-hour" /><span className="clock-hand hand-minute" /><span className="clock-center" /><span className="clock-tick tick-12" /><span className="clock-tick tick-3" /><span className="clock-tick tick-6" /><span className="clock-tick tick-9" /></div><h3>{enabled ? 'Every 3 hours' : 'Whenever you’re ready'}</h3><p>{schedulePreview}</p><div className={`schedule-status ${enabled ? 'status-on' : 'status-off'}`}><span />{enabled ? 'SCHEDULE ON' : 'SCHEDULE PAUSED'}</div></div>
+        <div className="schedule-honesty"><span><ShieldCheck size={17} /></span><div><strong>Clear about access.</strong><p>Facebook authorization is required to publish. View insights are optional; Reelkeeper shows when that access is unavailable.</p></div></div>
+        <div className="last-activity"><span className="section-index">LAST POSTED</span><strong>{readableDate(settings.data?.lastPostedAt)}</strong>{settings.data?.lastPostVideoTitle && <small>{settings.data.lastPostVideoTitle}</small>}</div>
+      </aside>
+    </div>}
   </AppFrame>;
 }
 

@@ -20,6 +20,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  FacebookConnectResponse,
+  FacebookSelectPageInput,
+  FacebookStatus,
   HealthStatus,
   ScheduleSettings,
   ScheduleSettingsInput,
@@ -767,12 +770,325 @@ export function useGetSettings<TData = Awaited<ReturnType<typeof getSettings>>, 
 
 
 
+export const getGetFacebookStatusUrl = () => {
+
+
+
+
+  return `/api/facebook/status`
+}
+
+/**
+ * @summary Get Facebook Page connection and publishing status
+ */
+export const getFacebookStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<FacebookStatus> => {
+
+  return customFetch<FacebookStatus>(getGetFacebookStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFacebookStatusQueryKey = () => {
+    return [
+    `/api/facebook/status`
+    ] as const;
+    }
+
+
+export const getGetFacebookStatusQueryOptions = <TData = Awaited<ReturnType<typeof getFacebookStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFacebookStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFacebookStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFacebookStatus>>> = ({ signal }) => getFacebookStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFacebookStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFacebookStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getFacebookStatus>>>
+export type GetFacebookStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get Facebook Page connection and publishing status
+ */
+
+export function useGetFacebookStatus<TData = Awaited<ReturnType<typeof getFacebookStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFacebookStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFacebookStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getStartFacebookConnectUrl = () => {
+
+
+
+
+  return `/api/facebook/connect`
+}
+
+/**
+ * @summary Start secure Facebook OAuth connection
+ */
+export const startFacebookConnect = async ( options?: Parameters<typeof customFetch>[1]): Promise<FacebookConnectResponse> => {
+
+  return customFetch<FacebookConnectResponse>(getStartFacebookConnectUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getStartFacebookConnectMutationKey = () => ['startFacebookConnect'] as const;
+
+export const getStartFacebookConnectMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startFacebookConnect>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startFacebookConnect>>, TError,void, TContext> => {
+
+const mutationKey = getStartFacebookConnectMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startFacebookConnect>>, void> = () => {
+
+
+          return  startFacebookConnect(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartFacebookConnectMutationResult = NonNullable<Awaited<ReturnType<typeof startFacebookConnect>>>
+
+    export type StartFacebookConnectMutationError = ErrorType<void>
+
+
+    /**
+ * @summary Start secure Facebook OAuth connection
+ */
+export const useStartFacebookConnect = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startFacebookConnect>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startFacebookConnect>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getStartFacebookConnectMutationOptions(options));
+    }
+
+export const getSelectFacebookPageUrl = () => {
+
+
+
+
+  return `/api/facebook/page`
+}
+
+/**
+ * @summary Choose the Facebook Page used for publishing
+ */
+export const selectFacebookPage = async (facebookSelectPageInput: FacebookSelectPageInput, options?: Parameters<typeof customFetch>[1]): Promise<FacebookStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacebookStatus>(getSelectFacebookPageUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facebookSelectPageInput)
+  }
+);}
+
+
+
+
+
+export const getSelectFacebookPageMutationKey = () => ['selectFacebookPage'] as const;
+
+export const getSelectFacebookPageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof selectFacebookPage>>, TError,SelectFacebookPageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof selectFacebookPage>>, TError,SelectFacebookPageMutationVariables, TContext> => {
+
+const mutationKey = getSelectFacebookPageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof selectFacebookPage>>, SelectFacebookPageMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  selectFacebookPage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SelectFacebookPageMutationResult = NonNullable<Awaited<ReturnType<typeof selectFacebookPage>>>
+    export type SelectFacebookPageMutationBody = BodyType<FacebookSelectPageInput>
+    export type SelectFacebookPageMutationError = ErrorType<void>
+    export type SelectFacebookPageMutationVariables = {data: BodyType<FacebookSelectPageInput>}
+
+    /**
+ * @summary Choose the Facebook Page used for publishing
+ */
+export const useSelectFacebookPage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof selectFacebookPage>>, TError,SelectFacebookPageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof selectFacebookPage>>,
+        TError,
+        SelectFacebookPageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSelectFacebookPageMutationOptions(options));
+    }
+
+export const getDisconnectFacebookUrl = () => {
+
+
+
+
+  return `/api/facebook/connection`
+}
+
+/**
+ * @summary Disconnect Facebook and pause automatic publishing
+ */
+export const disconnectFacebook = async ( options?: Parameters<typeof customFetch>[1]): Promise<FacebookStatus> => {
+
+  return customFetch<FacebookStatus>(getDisconnectFacebookUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDisconnectFacebookMutationKey = () => ['disconnectFacebook'] as const;
+
+export const getDisconnectFacebookMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectFacebook>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disconnectFacebook>>, TError,void, TContext> => {
+
+const mutationKey = getDisconnectFacebookMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectFacebook>>, void> = () => {
+
+
+          return  disconnectFacebook(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisconnectFacebookMutationResult = NonNullable<Awaited<ReturnType<typeof disconnectFacebook>>>
+
+    export type DisconnectFacebookMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Disconnect Facebook and pause automatic publishing
+ */
+export const useDisconnectFacebook = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectFacebook>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof disconnectFacebook>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDisconnectFacebookMutationOptions(options));
+    }
+
 export const getUpdateSettingsUrl = () => {
 
 
 
 
-  return `/api/settings`
+  return `/api/facebook/connection`
 }
 
 /**

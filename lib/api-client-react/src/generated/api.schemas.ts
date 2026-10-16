@@ -21,6 +21,7 @@ export interface Video {
   /** @nullable */
   lastPostedAt?: string | null;
   postedCount: number;
+  viewCount: number;
   isNext: boolean;
 }
 
@@ -77,6 +78,11 @@ export interface ScheduleSettings {
   nextPostAt: string | null;
   /** @nullable */
   lastPostedAt: string | null;
+  currentCycle: number;
+  /** @nullable */
+  lastError: string | null;
+  /** @nullable */
+  lastPostVideoTitle: string | null;
 }
 
 export interface ScheduleSettingsInput {
@@ -118,5 +124,42 @@ export interface UploadUrlResponse {
 
 export interface VideoFileUrl {
   url: string;
+}
+
+export interface FacebookPageSummary {
+  pageId: string;
+  pageName: string;
+  selected: boolean;
+}
+
+export interface FacebookStatus {
+  appConfigured: boolean;
+  connected: boolean;
+  callbackUrl: string;
+  pages: FacebookPageSummary[];
+  /** @nullable */
+  selectedPageId: string | null;
+  /** @nullable */
+  selectedPageName: string | null;
+  viewInsightsAvailable: boolean;
+  /** @nullable */
+  viewInsightsMessage: string | null;
+  autoPostingEnabled: boolean;
+  /** @nullable */
+  nextPostAt: string | null;
+  /** @nullable */
+  lastError: string | null;
+}
+
+export interface FacebookConnectResponse {
+  authorizationUrl: string;
+}
+
+export interface FacebookSelectPageInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  pageId: string;
 }
 
