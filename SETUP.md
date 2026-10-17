@@ -12,21 +12,21 @@ This is a private website built for one creator (you). You upload your lyric vid
 - You upload Video A, Video B, Video C
 - App posts Video A → waits 3 hours → posts Video B → waits 3 hours → posts Video C → waits 3 hours → posts Video A again → and so on forever
 - If you upload a new video it goes to the end of the queue and gets picked up automatically
-- You can skip a video, mark one as posted manually, or pause the schedule any time
 
 ---
 
-## Tech Stack (What the App is Built With)
+## Tech Stack
 
 | Part | Technology |
 |---|---|
-| Frontend (the website UI) | React 19 + Vite + TypeScript |
-| Backend (the server) | Express 5 + Node.js + TypeScript |
-| Database | PostgreSQL + Drizzle ORM |
-| Login / Auth | Clerk (email and password) |
-| Video Storage | Google Cloud Storage (via Replit Object Storage) |
-| Facebook Integration | Facebook Graph API v22.0 |
-| Package Manager | pnpm (workspaces / monorepo) |
+| Frontend | React 19 + Vite + TypeScript |
+| Backend | Express 5 + Node.js + TypeScript |
+| Database | PostgreSQL via Supabase |
+| Auth | Supabase Auth (email/password + Facebook OAuth login) |
+| Video Storage | Supabase Storage (private bucket) |
+| Facebook Auto-posting | Facebook Graph API v22.0 (Resumable Upload API) |
+| ORM | Drizzle ORM |
+| Package Manager | pnpm workspaces |
 
 ---
 
@@ -34,332 +34,204 @@ This is a private website built for one creator (you). You upload your lyric vid
 
 ```
 Lyric-Reels-Queue/
+├── .env                         ← YOUR SECRETS (never commit this)
 ├── artifacts/
-│   ├── api-server/          ← The backend Express server
+│   ├── api-server/              ← Express backend
 │   │   └── src/
-│   │       ├── index.ts     ← Server entry point, starts scheduler
-│   │       ├── app.ts       ← Express app setup, middleware
+│   │       ├── index.ts         ← Server entry, starts scheduler
+│   │       ├── app.ts           ← Express setup (no Clerk, no proxy)
 │   │       ├── lib/
-│   │       │   ├── autoPostScheduler.ts   ← THE AUTO-POSTER (runs every 60s)
-│   │       │   ├── objectStorage.ts       ← Google Cloud Storage helpers
+│   │       │   ├── autoPostScheduler.ts  ← Posts Reels every 3 hours
+│   │       │   ├── objectStorage.ts      ← Supabase Storage wrapper
 │   │       │   └── logger.ts
 │   │       ├── middlewares/
-│   │       │   ├── requireAuth.ts         ← Single-owner enforcement via Clerk
-│   │       │   └── clerkProxyMiddleware.ts
+│   │       │   └── requireAuth.ts        ← Supabase JWT verification
 │   │       └── routes/
-│   │           ├── index.ts     ← Mounts all routers
 │   │           ├── facebook.ts  ← Facebook OAuth + page management
-│   │           ├── videos.ts    ← Video CRUD + queue logic
+│   │           ├── videos.ts    ← Video CRUD + queue
 │   │           ├── settings.ts  ← Schedule settings
-│   │           ├── storage.ts   ← File upload URLs + file serving
-│   │           └── health.ts    ← Health check endpoint
-│   └── lyric-reels/         ← The frontend React app
+│   │           ├── storage.ts   ← Upload URLs + file serving
+│   │           └── health.ts
+│   └── lyric-reels/             ← React frontend
 │       └── src/
-│           └── App.tsx      ← ENTIRE frontend in one file (all pages + components)
+│           └── App.tsx          ← Entire frontend (Supabase Auth UI)
 ├── lib/
-│   ├── db/                  ← Database schema + Drizzle connection
-│   │   └── src/schema/
-│   │       └── lyric-reels.ts   ← All 4 database tables
-│   ├── api-spec/
-│   │   └── openapi.yaml     ← API contract (source of truth)
-│   ├── api-zod/             ← Auto-generated Zod validators (from openapi.yaml)
-│   └── api-client-react/    ← Auto-generated React Query hooks (from openapi.yaml)
-├── SETUP.md                 ← This file
+│   ├── db/                      ← Drizzle ORM + schema
+│   └── api-client-react/        ← Generated API hooks + custom-fetch
+├── SETUP.md                     ← This file
 └── pnpm-workspace.yaml
 ```
 
 ---
 
-## Database Tables
-
-Four tables in PostgreSQL:
-
-### `lyric_reels_owner`
-Stores who owns this private space. Only ever has 1 row. The first person to sign in becomes the owner. No one else can access the app.
-
-| Column | Purpose |
-|---|---|
-| id | Always 1 |
-| owner_id | Clerk user ID of the owner |
-
-### `lyric_reels_videos`
-Every video you upload.
-
-| Column | Purpose |
-|---|---|
-| id | Auto-increment |
-| owner_id | Who uploaded it |
-| title | The Reel title |
-| description | The Reel caption |
-| original_filename | Original file name |
-| object_path | Where it's stored in GCS |
-| mime_type | e.g. video/mp4 |
-| size_bytes | File size |
-| uploaded_at | When it was uploaded |
-| last_posted_at | When it was last posted to Facebook |
-| posted_count | How many times it has been posted |
-
-### `lyric_reels_schedule_settings`
-The posting schedule configuration.
-
-| Column | Purpose |
-|---|---|
-| owner_id | Who this belongs to |
-| enabled | Is auto-posting on or off |
-| interval_hours | Hours between posts (default: 3) |
-| timezone | Your local timezone |
-| next_post_at | When the next post is due |
-| last_posted_at | When the last post happened |
-| next_video_id | Which video posts next |
-
-### `lyric_reels_facebook` ← NEW (added in this session)
-Your Facebook connection details.
-
-| Column | Purpose |
-|---|---|
-| user_access_token | Long-lived Facebook user token (60 days) |
-| page_access_token | Page-level token (never expires) |
-| page_id | Your Facebook Page ID |
-| page_name | Your Facebook Page name |
-| view_insights_available | Whether insights permission was granted |
-| auto_posting_enabled | Whether auto-posting is currently active |
-| last_error | Last error message if a post failed |
-| connected_at | When Facebook was connected |
-
----
-
 ## What Is Already Built (Code Complete)
 
+### Auth
+- ✅ Supabase Auth — email/password sign in + Facebook OAuth login
+- ✅ Single-owner enforcement — first user to sign in claims the space
+- ✅ Session token automatically sent with every API request via Bearer header
+
 ### Backend
-- ✅ `GET /api/facebook/status` — returns connection status, selected page, next post time, last error
-- ✅ `POST /api/facebook/connect` — generates Facebook OAuth URL
-- ✅ `GET /api/facebook/callback` — receives OAuth code, exchanges for long-lived token, saves to DB
-- ✅ `PUT /api/facebook/page` — select which Facebook Page to post to
-- ✅ `DELETE /api/facebook/connection` — disconnect Facebook, pause schedule
-- ✅ `GET /api/videos` — list all videos in queue order
-- ✅ `POST /api/videos` — add video to queue after upload
-- ✅ `PATCH /api/videos/:id` — edit title/description
-- ✅ `DELETE /api/videos/:id` — remove from queue and storage
-- ✅ `POST /api/videos/:id/posted` — mark as posted, advance queue
-- ✅ `POST /api/videos/:id/skip` — skip video for this cycle
-- ✅ `GET /api/settings` — get schedule config
-- ✅ `PUT /api/settings` — update schedule config
-- ✅ `POST /api/storage/uploads/request-url` — get presigned upload URL
-- ✅ Auto-poster scheduler (runs every 60 seconds, posts when due)
-- ✅ Single-owner enforcement (only you can use the app)
+- ✅ All video CRUD + queue rotation endpoints
+- ✅ Facebook OAuth connect/callback/page-select/disconnect
+- ✅ Auto-post scheduler (every 60s, posts when due)
+- ✅ Supabase Storage for video upload/download/delete
+- ✅ Schedule settings (3-hour interval, timezone, on/off)
 
 ### Frontend
-- ✅ Landing page (public)
-- ✅ Sign in / Sign up pages (Clerk)
-- ✅ Dashboard (today's next video, auto-posting status, rhythm card)
-- ✅ Library page (upload videos, set title/description, preview, delete, edit)
-- ✅ Schedule page (enable/disable schedule, timezone, Facebook connect/disconnect/page select)
-- ✅ Full Facebook connection UI (connect button, page picker, disconnect, error display)
-
-### How the Auto-Poster Works
-`artifacts/api-server/src/lib/autoPostScheduler.ts` runs every 60 seconds:
-1. Finds the owner in the database
-2. Checks if schedule is enabled AND current time is past `next_post_at`
-3. Checks Facebook Page is connected
-4. Downloads the next video from Google Cloud Storage into memory
-5. Uploads it to Facebook using the Resumable Upload API (handles large files in chunks)
-6. Marks it as posted in the database
-7. Advances the queue pointer to the next video (wraps to start after last)
-8. Sets `next_post_at = now + 3 hours`
-9. If anything fails, saves the error message to `last_error` so you can see it on the Dashboard
+- ✅ Landing page
+- ✅ Sign In / Sign Up pages with Supabase Auth UI (includes Facebook login button)
+- ✅ Dashboard (next video, auto-posting status)
+- ✅ Library (upload, edit, delete, preview)
+- ✅ Schedule page (enable schedule, connect Facebook Page)
 
 ---
 
-## What Still Needs To Be Done
+## What Still Needs To Be Done Before The App Works
 
-### BLOCKER 1 — Run the Database Migration
-The new `lyric_reels_facebook` table has been added to the schema code but has NOT been created in the actual database yet. The app will crash when you try to connect Facebook until this is done.
+### STEP 1 — Set up Supabase Storage bucket
 
-**Command to run (once, in your terminal):**
+1. Go to your Supabase dashboard: https://supabase.com/dashboard/project/bludbzavbonfysdxiirw
+2. Click **Storage** in the left sidebar
+3. Click **New bucket**
+4. Name it exactly: `lyric-videos`
+5. Set it to **Private** (not public)
+6. Click **Create bucket**
+
+### STEP 2 — Get your database connection string
+
+1. In Supabase dashboard → **Settings** → **Database**
+2. Under **Connection string** → choose **URI**
+3. Choose **Session pooler** (not direct connection)
+4. Copy the string — it looks like:
+   ```
+   postgresql://postgres.bludbzavbonfysdxiirw:[YOUR-PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+   ```
+5. Replace `[YOUR-PASSWORD]` with your Supabase database password
+
+### STEP 3 — Fill in your .env file
+
+Open the `.env` file in the root of this project and:
+1. Replace `DATABASE_URL` with the connection string from Step 2
+2. Replace `APP_BASE_URL` with your actual deployed URL (fill this in after you deploy)
+
+The other values in `.env` are already filled in.
+
+### STEP 4 — Enable Facebook as a login provider in Supabase
+
+1. Go to Supabase dashboard → **Authentication** → **Providers**
+2. Find **Facebook** and click to expand
+3. Enter:
+   - **Facebook App ID**: `1144368468562714`
+   - **Facebook App Secret**: `b80dd640d48e7af3feb2b90bdcab7e56`
+4. Copy the **Callback URL** shown (looks like `https://bludbzavbonfysdxiirw.supabase.co/auth/v1/callback`)
+5. Go to https://developers.facebook.com/apps/1144368468562714 → **Facebook Login** → **Settings**
+6. Add that callback URL to **Valid OAuth Redirect URIs**
+7. Click **Save**
+
+### STEP 5 — Run the database migration
+
+In a terminal at the project root:
 ```bash
 pnpm --filter @workspace/db run push
 ```
 
-### BLOCKER 2 — Set Environment Variables
-These must be set on your deployment platform:
+This creates all 4 database tables including the new `lyric_reels_facebook` table.
 
-```
-FACEBOOK_APP_ID=1144368468562714
-FACEBOOK_APP_SECRET=b80dd640d48e7af3feb2b90bdcab7e56
-APP_BASE_URL=https://your-deployed-url.com
-```
+### STEP 6 — Install packages
 
-The ones that should already be set (from before):
-```
-DATABASE_URL=your-postgres-connection-string
-PORT=3000 (or whatever your platform assigns)
-CLERK_PUBLISHABLE_KEY=...
-CLERK_SECRET_KEY=...
-PRIVATE_OBJECT_DIR=...
-PUBLIC_OBJECT_SEARCH_PATHS=...
-```
-
-### BLOCKER 3 — Add Callback URL to Facebook Developer Console
-1. Go to: https://developers.facebook.com/apps/1144368468562714
-2. Click **Facebook Login** → **Settings**
-3. Under **Valid OAuth Redirect URIs** add:
-   ```
-   https://your-deployed-url.com/api/facebook/callback
-   ```
-4. Save changes
-
-### BLOCKER 4 — Set Facebook App to Live Mode
-1. In the Facebook Developer Console
-2. At the top of the page find the toggle that says **In development**
-3. Switch it to **Live**
-4. This is required so the OAuth flow works for real (not just for you as the developer)
-
----
-
-## Step-by-Step Setup Guide (Simple Version)
-
-### Step 1 — Deploy the App
-You need a live URL. If you are on Replit:
-1. Open your Replit workspace
-2. Click the **Deploy** button (top right)
-3. Choose **Autoscale** or **Reserved VM**
-4. Wait for deployment — you'll get a URL like `https://lyric-reels-queue.yourname.repl.co`
-
-### Step 2 — Set Environment Variables on Replit
-1. In your Replit workspace click **Secrets** (the padlock icon on the left sidebar)
-2. Add these one by one:
-   - Name: `FACEBOOK_APP_ID` → Value: `1144368468562714`
-   - Name: `FACEBOOK_APP_SECRET` → Value: `b80dd640d48e7af3feb2b90bdcab7e56`
-   - Name: `APP_BASE_URL` → Value: your deployed URL (e.g. `https://lyric-reels-queue.yourname.repl.co`)
-
-### Step 3 — Run the Database Migration
-In the Replit Shell tab run:
 ```bash
-pnpm --filter @workspace/db run push
-```
-You should see something like `✓ Changes applied`. This creates the Facebook connection table.
-
-### Step 4 — Configure Facebook Developer Console
-1. Go to: https://developers.facebook.com/apps/1144368468562714
-2. On the left sidebar click **Facebook Login** → **Settings**
-3. In the **Valid OAuth Redirect URIs** box paste:
-   ```
-   https://your-deployed-url.com/api/facebook/callback
-   ```
-   (replace with your actual URL from Step 1)
-4. Click **Save Changes**
-5. At the top of the page switch the app from **In development** to **Live**
-
-### Step 5 — Connect Your Facebook Page in the App
-1. Open your deployed app URL in the browser
-2. Sign in (create an account with email and password — this is your Clerk account for the app, not Facebook)
-3. Go to the **Schedule** page (click Schedule in the sidebar)
-4. Click **Connect Facebook**
-5. A Facebook popup will appear — log in and click **Allow/Continue**
-6. Back in the app, your **Cwimisics** page should appear — select it
-7. Turn the schedule **ON**
-8. Save
-
-### Step 6 — Upload Your Videos
-1. Go to the **Library** page
-2. Click **Add videos**
-3. Select your lyric video files (up to 2 GB each, multiple at once)
-4. Give each one a title and description (this becomes the Reel caption on Facebook)
-5. Click **Upload**
-
-### Step 7 — Done
-The app will now post the first video to your Cwimisics Facebook Page, then wait 3 hours, then post the next one, and so on forever. When it reaches the last video it loops back to the first.
-
----
-
-## Facebook Page Notes
-
-- You are posting to your **Cwimisics** Facebook Page (not your personal profile)
-- Facebook's API does not allow posting to personal profiles — Pages only (this is Facebook's rule, cannot be changed)
-- Your personal profile (Livia Lyric) with 10k followers stays untouched
-- Recommended: post once on your personal profile telling followers to follow the Cwimisics Page
-- The Cwimisics Page is where all automated Reels will appear
-
----
-
-## How the Queue / Loop Works
-
-Videos are ordered by when they were uploaded (oldest first). The queue pointer (`next_video_id`) advances after each post:
-
-```
-Upload order:  Video 1 → Video 2 → Video 3 → Video 4
-Post order:    Video 1 → Video 2 → Video 3 → Video 4 → Video 1 → Video 2 → ...
-                                                         (loops back)
+pnpm install
 ```
 
-If you upload a new video while the loop is running, it goes to the end and gets picked up on the next cycle.
+### STEP 7 — Deploy
 
-If you skip a video, the pointer moves forward without posting it.
+Deploy to any platform that supports Node.js (Railway, Render, Fly.io, etc).  
+Set all the environment variables from `.env` on your deployment platform.  
+Update `APP_BASE_URL` in your env vars to the actual deployed URL.
 
-If you delete a video, the pointer automatically moves to the next available one.
+Then add your deployed URL to the Facebook app's **Valid OAuth Redirect URIs**:
+```
+https://your-deployed-url.com/api/facebook/callback
+```
+
+### STEP 8 — First use
+
+1. Open your deployed app URL
+2. Click **Sign in with Facebook** (or email/password)
+3. Go to **Schedule** → **Connect Facebook**
+4. Select your **Cwimisics** page (or whatever your Facebook Page is named)
+5. Turn schedule **ON**
+6. Go to **Library** → upload your lyric videos with titles and descriptions
+7. Done — the app will post every 3 hours automatically forever
 
 ---
 
-## What Happens If a Post Fails
+## How Facebook Login Works (Important)
 
-If the Facebook upload fails for any reason (network issue, token expired, etc.):
-- The error message is saved to the database
-- It shows up on the Dashboard under the rhythm card as a red error message
-- The queue pointer does NOT advance — it will retry the same video on the next tick (60 seconds later)
-- Common fix: go to Schedule page, disconnect Facebook, reconnect it (refreshes the token)
+There are TWO separate Facebook connections in this app:
+
+| What | Purpose |
+|---|---|
+| **Facebook login (Sign in with Facebook)** | Logs you into the Reelkeeper website. Handled by Supabase Auth. |
+| **Facebook Page connection (on Schedule page)** | Grants permission to post Reels to your Page. Handled by our Facebook OAuth routes. |
+
+You need BOTH. The login gets you into the website. The Page connection lets the auto-poster publish your videos.
 
 ---
 
-## Facebook Token Expiry
+## Environment Variables Reference
 
-- The user access token lasts **60 days**
-- The page access token **never expires** as long as you don't revoke it
-- If the user token expires you'll see an error on the Dashboard
-- Fix: go to Schedule → Disconnect Facebook → Connect Facebook again
+| Variable | Where to get it | Used by |
+|---|---|---|
+| `SUPABASE_URL` | Supabase dashboard → Settings → API | Backend |
+| `SUPABASE_ANON_KEY` | Supabase dashboard → Settings → API | Backend |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase dashboard → Settings → API | Backend (JWT verification) |
+| `SUPABASE_STORAGE_BUCKET` | The bucket name you created (lyric-videos) | Backend |
+| `DATABASE_URL` | Supabase dashboard → Settings → Database | Backend (Drizzle ORM) |
+| `VITE_SUPABASE_URL` | Same as SUPABASE_URL | Frontend (Vite build) |
+| `VITE_SUPABASE_ANON_KEY` | Same as SUPABASE_ANON_KEY | Frontend (Vite build) |
+| `PORT` | Set to 3000 or whatever your host assigns | Backend |
+| `BASE_PATH` | Set to / | Both |
+| `APP_BASE_URL` | Your deployed URL | Backend (Facebook OAuth callback) |
+| `FACEBOOK_APP_ID` | Facebook Developer Console | Backend |
+| `FACEBOOK_APP_SECRET` | Facebook Developer Console | Backend |
 
 ---
 
 ## For the Next AI / Developer
 
-### What was built in the last session
-1. `lib/db/src/schema/lyric-reels.ts` — added `facebookConnectionTable`
-2. `artifacts/api-server/src/routes/facebook.ts` — new file, all Facebook OAuth + page endpoints
-3. `artifacts/api-server/src/lib/autoPostScheduler.ts` — new file, the background posting engine
-4. `artifacts/api-server/src/routes/index.ts` — added `facebookRouter`
-5. `artifacts/api-server/src/index.ts` — added `startAutoPostScheduler()` call after server starts
-6. `artifacts/lyric-reels/src/App.tsx` — Dashboard updated to show auto-posting status
+### Migration completed in this project
+The entire codebase was migrated FROM Clerk + Replit/GCS TO Supabase Auth + Supabase Storage.
 
-### What the next developer needs to know
-- The DB migration (`pnpm --filter @workspace/db run push`) has NOT been run yet — this is the first thing to do
-- The Facebook app credentials and `APP_BASE_URL` env vars are not set yet
-- The Facebook app is likely still in Development mode in the Meta Developer Console
-- The `autoPostScheduler` uses the Facebook Resumable Upload API for large files — this is correct for 600 MB videos
-- The scheduler runs as a `setInterval` inside the Node.js process — it is NOT a separate cron job or worker
-- All Facebook API calls use Graph API v22.0
-- The app is single-owner by design — the first person to sign in claims the space
-- `requireAuth` middleware enforces this — any second user gets a 403
-- The frontend entire app is in one file: `artifacts/lyric-reels/src/App.tsx`
-- API types are generated from `lib/api-spec/openapi.yaml` using Orval — run `pnpm --filter @workspace/api-spec run codegen` after changing the spec
+**What changed:**
+1. `artifacts/api-server/package.json` — removed `@clerk/express`, `@clerk/shared`, `@google-cloud/storage`, `google-auth-library`, `http-proxy-middleware`; added `@supabase/supabase-js`
+2. `artifacts/lyric-reels/package.json` — removed `@clerk/react`, `@clerk/themes`; added `@supabase/supabase-js`, `@supabase/auth-ui-react`, `@supabase/auth-ui-shared`
+3. `artifacts/api-server/src/middlewares/requireAuth.ts` — uses `supabase.auth.getUser(token)` to verify Bearer tokens
+4. `artifacts/api-server/src/app.ts` — no Clerk middleware, no proxy, plain Express
+5. `artifacts/api-server/src/middlewares/clerkProxyMiddleware.ts` — DELETED
+6. `artifacts/api-server/src/lib/objectStorage.ts` — full rewrite using Supabase Storage SDK (createSignedUploadUrl, createSignedUrl, download, remove)
+7. `artifacts/api-server/src/lib/objectAcl.ts` — simplified, no GCS metadata, just owner-match check
+8. `artifacts/api-server/src/routes/storage.ts` — updated for new objectStorage API
+9. `artifacts/api-server/src/lib/autoPostScheduler.ts` — uses `downloadObjectAsBuffer` instead of GCS stream
+10. `artifacts/lyric-reels/src/App.tsx` — full rewrite: Supabase Auth, `@supabase/auth-ui-react` for sign-in/sign-up, `useAuth()` context instead of `useUser()`/`useClerk()`
+11. `artifacts/lyric-reels/vite.config.ts` — removed all Replit plugins, simplified
 
-### Known issues / pre-existing
-- `artifacts/api-server/src/routes/videos.ts` lines 53 and 61 have a pre-existing `TS7006` implicit-any TypeScript warning — not introduced by our changes, not a blocker
-- TypeScript `TS6305` errors when running `tsc` locally are because `lib/db` and `lib/api-zod` are source-only packages that need to be built first — not a real error, everything works on Replit
+**Auth flow:**
+- Frontend: Supabase JS client handles sign-in/sign-up (incl. Facebook OAuth via Supabase)
+- On every API request: `setAuthTokenGetter` in custom-fetch sends `Authorization: Bearer <supabase-session-token>`
+- Backend: `requireAuth.ts` calls `supabase.auth.getUser(token)` with the service role key
+- Single-owner claim: stored in `lyric_reels_owner` table (id=1, ownerId=supabase-user-uuid)
 
----
+**Storage flow:**
+- Upload: frontend calls `POST /api/storage/uploads/request-url` → gets Supabase signed upload URL → XHRs directly to Supabase
+- Serve: `GET /api/storage/objects/*` → generates a 5-minute signed URL → 302 redirect to Supabase CDN
+- Scheduler download: `ObjectStorageService.downloadObjectAsBuffer()` uses `supabase.storage.from(bucket).download(path)`
 
-## Summary
-
-| Item | Status |
-|---|---|
-| Video upload and library | ✅ Complete |
-| Queue rotation (FIFO, infinite loop) | ✅ Complete |
-| 3-hour auto-post scheduler | ✅ Complete |
-| Facebook OAuth connect flow | ✅ Complete |
-| Facebook Page selection | ✅ Complete |
-| Auto-post Reels to Facebook | ✅ Complete |
-| Dashboard auto-posting status | ✅ Complete |
-| Database migration run | ❌ Needs to be done |
-| Environment variables set | ❌ Needs to be done |
-| Facebook callback URL registered | ❌ Needs to be done |
-| Facebook app set to Live mode | ❌ Needs to be done |
-| App deployed to live URL | ❌ Needs to be done |
+### Known pending items (not yet done by any AI)
+1. **Supabase Storage bucket** — must be created manually in the Supabase dashboard (bucket name: `lyric-videos`, private)
+2. **DATABASE_URL** — must be filled in `.env` with the actual Supabase connection string
+3. **DB migration** — `pnpm --filter @workspace/db run push` not yet run
+4. **Facebook provider in Supabase** — must be enabled in Supabase Auth dashboard
+5. **Facebook app Live mode** — must be switched from Development to Live in Meta Developer Console
+6. **APP_BASE_URL** — must be set to actual deployed URL after deployment

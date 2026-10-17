@@ -16,7 +16,6 @@
  */
 
 import { and, asc, eq, gt } from "drizzle-orm";
-import { Readable } from "stream";
 import {
   db,
   facebookConnectionTable,
@@ -24,7 +23,7 @@ import {
   scheduleSettingsTable,
   videosTable,
 } from "@workspace/db";
-import { objectStorageClient, ObjectStorageService } from "./objectStorage";
+import { ObjectStorageService } from "./objectStorage";
 import { logger } from "./logger";
 
 // ─── Facebook Graph API helpers ───────────────────────────────────────────────
@@ -240,19 +239,14 @@ async function tick(): Promise<void> {
 
   logger.info({ ownerId, videoId: video.id, title: video.title }, "Scheduler: posting Reel");
 
-  // 5. Download the video from GCS into memory
+  // 5. Download the video from Supabase Storage into memory
   let videoBuffer: Buffer;
+  let mimeType: string;
   try {
     const objectStorage = new ObjectStorageService();
-    const objectFile = await objectStorage.getObjectEntityFile(video.objectPath);
-    const chunks: Buffer[] = [];
-    await new Promise<void>((resolve, reject) => {
-      const stream = objectFile.createReadStream();
-      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-      stream.on("end", resolve);
-      stream.on("error", reject);
-    });
-    videoBuffer = Buffer.concat(chunks);
+    const result = await objectStorage.downloadObjectAsBuffer(video.objectPath);
+    videoBuffer = result.buffer;
+    mimeType = result.mimeType || video.mimeType || "video/mp4";
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err, videoId: video.id }, "Scheduler: failed to download video from storage");
@@ -268,7 +262,7 @@ async function tick(): Promise<void> {
       pageAccessToken: fbConn.pageAccessToken,
       videoBuffer,
       videoSizeBytes: video.sizeBytes,
-      mimeType: video.mimeType,
+      mimeType,
       title: video.title,
       description: video.description,
     });

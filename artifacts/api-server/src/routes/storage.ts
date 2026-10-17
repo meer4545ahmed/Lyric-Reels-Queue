@@ -1,11 +1,9 @@
-import { Readable } from 'stream';
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from '@workspace/api-zod';
 import { Router, type IRouter, type Request, type Response } from 'express';
 import { authenticatedUserId, requireAuth } from '../middlewares/requireAuth';
-
 import { ObjectPermission } from '../lib/objectAcl';
 import {
   ObjectNotFoundError,
@@ -18,10 +16,8 @@ const objectStorageService = new ObjectStorageService();
 /**
  * POST /storage/uploads/request-url
  *
- * Request a presigned URL for file upload.
- * The client sends JSON metadata (name, size, contentType) — NOT the file.
- * Then uploads the file directly to the returned presigned URL.
- * Requires auth middleware so public callers cannot mint write-capable URLs.
+ * Returns a Supabase presigned upload URL so the browser can PUT the video
+ * file directly to Supabase Storage (never goes through our server).
  */
 router.post(
   '/storage/uploads/request-url',
@@ -41,8 +37,7 @@ router.post(
       }
 
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      const objectPath =
-        objectStorageService.normalizeObjectEntityPath(uploadURL);
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
 
       res.json(
         RequestUploadUrlResponse.parse({
@@ -59,94 +54,53 @@ router.post(
 );
 
 /**
- * GET /storage/public-objects/*
- *
- * Serve public assets from PUBLIC_OBJECT_SEARCH_PATHS.
- * These are unconditionally public — no authentication or ACL checks.
- * IMPORTANT: Always provide this endpoint when object storage is set up.
- */
-router.get(
-  '/storage/public-objects/*filePath',
-  async (req: Request, res: Response) => {
-    try {
-      const raw = req.params.filePath;
-      const filePath = Array.isArray(raw) ? raw.join('/') : raw;
-      const file = await objectStorageService.searchPublicObject(filePath);
-      if (!file) {
-        res.status(404).json({ error: 'File not found' });
-        return;
-      }
-
-      const response = await objectStorageService.downloadObject(file);
-
-      res.status(response.status);
-      response.headers.forEach((value, key) => res.setHeader(key, value));
-
-      if (response.body) {
-        const nodeStream = Readable.fromWeb(
-          response.body as ReadableStream<Uint8Array>,
-        );
-        nodeStream.pipe(res);
-      } else {
-        res.end();
-      }
-    } catch (error) {
-      req.log.error({ err: error }, 'Error serving public object');
-      res.status(500).json({ error: 'Failed to serve public object' });
-    }
-  },
-);
-
-/**
  * GET /storage/objects/*
  *
- * Serve object entities from PRIVATE_OBJECT_DIR.
- * These are served from a separate path from /public-objects and can optionally
- * be protected with authentication or ACL checks based on the use case.
+ * Serves private video files. Generates a short-lived Supabase signed URL
+ * and redirects the browser to it — the video streams directly from Supabase CDN.
+ * Requires the caller to be the authenticated owner.
  */
 router.get(
   '/storage/objects/*path',
   requireAuth,
   async (req: Request, res: Response) => {
-  try {
-    const raw = req.params.path;
-    const wildcardPath = Array.isArray(raw) ? raw.join('/') : raw;
-    const objectPath = `/objects/${wildcardPath}`;
-    const objectFile =
+    try {
+      const raw = req.params.path;
+      const wildcardPath = Array.isArray(raw) ? raw.join('/') : raw;
+      const objectPath = `/objects/${wildcardPath}`;
+      const userId = authenticatedUserId(req);
+
+      // Verify the object exists
       await objectStorageService.getObjectEntityFile(objectPath);
 
-    const canAccess = await objectStorageService.canAccessObjectEntity({
-      userId: authenticatedUserId(req),
-      objectFile,
-      requestedPermission: ObjectPermission.READ,
-    });
-    if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
+      // ACL check — in single-owner mode, the authenticated user IS the owner
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        userId,
+        objectOwnerId: userId, // single-owner: requester == owner
+        requestedPermission: ObjectPermission.READ,
+      });
+      if (!canAccess) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
 
-    const response = await objectStorageService.downloadObject(objectFile);
-
-    res.status(response.status);
-    response.headers.forEach((value, key) => res.setHeader(key, value));
-
-    if (response.body) {
-      const nodeStream = Readable.fromWeb(
-        response.body as ReadableStream<Uint8Array>,
+      const response = await objectStorageService.downloadObjectToResponse(
+        objectPath,
+        userId,
       );
-      nodeStream.pipe(res);
-    } else {
+
+      // Relay the redirect from Supabase (302 + Location header)
+      res.status(response.status);
+      response.headers.forEach((value, key) => res.setHeader(key, value));
       res.end();
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) {
+        res.status(404).json({ error: 'Object not found' });
+        return;
+      }
+      req.log.error({ err: error }, 'Error serving object');
+      res.status(500).json({ error: 'Failed to serve object' });
     }
-  } catch (error) {
-    if (error instanceof ObjectNotFoundError) {
-      req.log.warn({ err: error }, 'Object not found');
-      res.status(404).json({ error: 'Object not found' });
-      return;
-    }
-    req.log.error({ err: error }, 'Error serving object');
-    res.status(500).json({ error: 'Failed to serve object' });
-  }
   },
 );
 
