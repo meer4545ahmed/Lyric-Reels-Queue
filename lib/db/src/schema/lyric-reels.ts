@@ -8,6 +8,27 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 
+// ────────────────────────────────────────────────────────────────────────────
+// Facebook connection — one row per owner, stores OAuth tokens & selected page
+// ────────────────────────────────────────────────────────────────────────────
+export const facebookConnectionTable = pgTable("lyric_reels_facebook", {
+  id: integer("id").primaryKey().default(1),
+  ownerId: text("owner_id").notNull(),
+  // Long-lived user access token exchanged from the short-lived OAuth code
+  userAccessToken: text("user_access_token"),
+  // Page-level access token (never expires for pages you manage)
+  pageAccessToken: text("page_access_token"),
+  pageId: text("page_id"),
+  pageName: text("page_name"),
+  // Whether the page supports video insights (pages_read_engagement permission)
+  viewInsightsAvailable: boolean("view_insights_available").notNull().default(false),
+  // Whether auto-posting is active (true when connected + page selected + schedule enabled)
+  autoPostingEnabled: boolean("auto_posting_enabled").notNull().default(false),
+  lastError: text("last_error"),
+  connectedAt: timestamp("connected_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const videosTable = pgTable("lyric_reels_videos", {
   id: serial("id").primaryKey(),
   ownerId: text("owner_id").notNull(),

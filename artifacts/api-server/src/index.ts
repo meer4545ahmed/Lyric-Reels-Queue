@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { startAutoPostScheduler } from "./lib/autoPostScheduler";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,7 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  // Start the background scheduler that auto-posts Reels every 3 hours
+  startAutoPostScheduler();
 });
