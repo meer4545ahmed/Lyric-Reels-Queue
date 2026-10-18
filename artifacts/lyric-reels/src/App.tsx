@@ -76,7 +76,7 @@ function AppFrame({ children }: { children: ReactNode }) {
   }, []);
   const nextPostAt = settings.data?.nextPostAt;
   const reminderDue = Boolean(settings.data?.enabled && nextPostAt && Date.parse(nextPostAt) <= clock);
-  const nextVideo = list.data?.videos.find((v) => v.isNext);
+  const nextVideo = list.data?.videos?.find((v) => v.isNext);
   useEffect(() => {
     if (!reminderDue || !nextPostAt || !user?.id || !('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
@@ -161,8 +161,8 @@ function AuthPage({ mode }: { mode: 'sign_in' | 'sign_up' }) {
             },
           }}
           providers={['facebook']}
+          queryParams={{ scope: 'public_profile' }}
           redirectTo={`${window.location.origin}${basePath}/`}
-          socialLayout="vertical"
           localization={{
             variables: {
               sign_in: { email_label: 'Your email', password_label: 'Password', button_label: 'Sign in', social_provider_text: 'Continue with {{provider}}' },
